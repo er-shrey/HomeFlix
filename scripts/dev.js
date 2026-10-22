@@ -1,9 +1,10 @@
 // Runs the API server (restarting on changes) and the Vite dev server together.
 import { spawn } from 'node:child_process';
 
+const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 const procs = [
-  spawn(process.execPath, ['--no-warnings=ExperimentalWarning', '--watch-path=server', 'server/index.js'], { stdio: 'inherit' }),
-  spawn(process.execPath, ['node_modules/vite/bin/vite.js'], { stdio: 'inherit' }),
+  spawn(npm, ['run', 'dev', '-w', 'server'], { stdio: 'inherit' }),
+  spawn(npm, ['run', 'dev', '-w', 'web'], { stdio: 'inherit' }),
 ];
 
 const stop = () => {

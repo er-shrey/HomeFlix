@@ -8,7 +8,7 @@ import { requireAdmin } from '../auth.js';
 import { BROWSER_SAFE_EXTS, PORT } from '../config.js';
 import { scanLibrary, scanAndWait, scanState, startWatching } from '../scanner.js';
 import { formatInfoText, writeFileAtomic, INFO_TEMPLATE } from '../infofile.js';
-import { FFMPEG, FFPROBE, frameThumbnail } from '../media.js';
+import { FFMPEG, FFPROBE } from '../media.js';
 import { lookupLanguage } from '../subtitles.js';
 import { artVersion } from '../catalog.js';
 
@@ -212,17 +212,6 @@ router.put('/titles/:id', async (req, res) => {
   res.json({ ok: true, infoPath: target, created });
 });
 
-// A still from the video, for the frame picker's suggestions (needs ffmpeg).
-router.get('/videos/:id/frame', async (req, res) => {
-  const v = db.prepare('SELECT path, mtime FROM videos WHERE id = ?').get(Number(req.params.id));
-  if (!v) return res.status(404).end();
-  const t = Math.max(0, Math.round((Number(req.query.t) || 0) * 10) / 10);
-  const file = await frameThumbnail(v.path, v.mtime, t, 320);
-  if (!file) return res.status(404).end();
-  res.setHeader('Cache-Control', 'private, max-age=3600');
-  res.sendFile(file);
-});
-
 const IMAGE_TYPES = { 'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp' };
 
 function looksLikeImage(buf, type) {
@@ -278,9 +267,7 @@ router.delete('/titles/:id', (req, res) => {
 });
 
 router.get('/info-template', (_req, res) => {
-  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-  res.setHeader('Content-Disposition', 'attachment; filename="info.txt"');
-  res.send(INFO_TEMPLATE);
+  res.json({ text: INFO_TEMPLATE });
 });
 
 export default router;

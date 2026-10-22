@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api } from '../api.js';
+import { api, media } from '../api.js';
 import Row from '../components/Row.jsx';
 
 export default function Home() {
@@ -53,7 +53,7 @@ export default function Home() {
 
   return (
     <div className="home">
-      <section className="hero" style={{ backgroundImage: `url(${hero.backdrop})` }}>
+      <section className="hero" style={{ backgroundImage: `url(${media(hero.backdrop)})` }}>
         <div className="hero-shade" />
         <div className="hero-content">
           <h1>{hero.title}</h1>

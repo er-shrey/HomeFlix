@@ -455,3 +455,34 @@ label.check input { width: auto !important; }
   .admin-header .logo { font-size: 1.1rem; }
   .admin-badge { display: none; }
 }
+
+/* ---------- Connecting to a server ---------- */
+.searching { display: flex; gap: 14px; align-items: flex-start; }
+.searching p { margin: 0 0 4px; }
+.small-spinner { width: 28px; height: 28px; border-width: 3px; flex: none; }
+.address-row { display: flex; gap: 10px; align-items: flex-end; }
+.address-row .port { width: 96px; flex: none; }
+.server-badge { text-align: center; margin: 8px 0 0; }
+.found-servers { display: flex; flex-direction: column; gap: 8px; }
+.found-servers .btn { justify-content: space-between; }
+
+/* ---------- TV remote (D-pad) focus ---------- */
+.tv-nav :focus { outline: 3px solid #fff !important; outline-offset: 3px; }
+.tv-nav .card-img:focus, .tv-nav .profile-tile:focus .avatar, .tv-nav .profile-tile:focus .add-circle { transform: scale(1.06); }
+.tv-nav .profile-tile:focus { outline: none !important; color: #fff; }
+.tv-nav .profile-tile:focus .avatar, .tv-nav .profile-tile:focus .add-circle { outline: 3px solid #fff; outline-offset: 3px; }
+
+/* ---------- Phone status bar / gesture bar (Android app draws edge to edge) ---------- */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+.header { height: calc(68px + var(--safe-top)); padding-top: var(--safe-top); }
+.picker-top { padding-top: calc(18px + var(--safe-top)); }
+.page { padding-top: calc(96px + var(--safe-top)); padding-bottom: calc(48px + var(--safe-bottom)); }
+.hero, .title-hero { padding-top: calc(120px + var(--safe-top)); }
+.auth-screen, .profiles-screen, .center-screen { padding-top: calc(32px + var(--safe-top)); padding-bottom: calc(32px + var(--safe-bottom)); }
+.player-top { padding-top: calc(16px + var(--safe-top)); }
+.player-bottom { padding-bottom: calc(16px + var(--safe-bottom)); }
+.rows { padding-bottom: calc(60px + var(--safe-bottom)); }
+@media (max-width: 600px) { .rows { margin-top: 0; } }

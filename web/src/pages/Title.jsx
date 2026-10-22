@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { api, fmtDuration } from '../api.js';
+import { api, fmtDuration, media } from '../api.js';
 import Card from '../components/Card.jsx';
 import Stars from '../components/Stars.jsx';
 
@@ -63,7 +63,7 @@ export default function Title() {
 
   return (
     <div className="title-page">
-      <section className="title-hero" style={{ backgroundImage: `url(${t.backdrop})` }}>
+      <section className="title-hero" style={{ backgroundImage: `url(${media(t.backdrop)})` }}>
         <div className="hero-shade" />
         <div className="hero-content">
           <h1>{t.title}</h1>
@@ -127,7 +127,7 @@ export default function Title() {
               <li key={e.id} className={`episode ${t.play.videoId === e.id ? 'current' : ''}`}>
                 <span className="ep-num">{e.number}</span>
                 <button className="ep-thumb" onClick={() => navigate(`/watch/${e.id}`)} aria-label={`Play ${e.title}`}>
-                  <img src={e.thumb} alt="" loading="lazy" />
+                  <img src={media(e.thumb)} alt="" loading="lazy" />
                   <span className="card-play">▶</span>
                   {e.progress > 0 && <span className="progress"><span style={{ width: `${e.progress * 100}%` }} /></span>}
                 </button>
@@ -168,7 +168,7 @@ export default function Title() {
 
       {trailer && (
         <div className="modal-backdrop" onClick={() => setTrailer(false)}>
-          <video className="trailer" src={`/media/trailer/${t.id}`} autoPlay controls onClick={(e) => e.stopPropagation()} onEnded={() => setTrailer(false)} />
+          <video className="trailer" src={media(`/media/trailer/${t.id}`)} autoPlay controls onClick={(e) => e.stopPropagation()} onEnded={() => setTrailer(false)} />
         </div>
       )}
 

@@ -4,6 +4,15 @@ import { api } from '../api.js';
 import Avatar from '../components/Avatar.jsx';
 import ProfileForm from '../components/ProfileForm.jsx';
 
+// A link can't carry the sign-in token, so fetch the template and hand it over as a file.
+async function downloadTemplate() {
+  const { text } = await api.get('/api/admin/info-template');
+  const url = URL.createObjectURL(new Blob([text], { type: 'text/plain' }));
+  const a = Object.assign(document.createElement('a'), { href: url, download: 'info.txt' });
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 function PasswordCard() {
   const [f, setF] = useState({ current: '', next: '', again: '' });
   const [msg, setMsg] = useState(null);
@@ -134,7 +143,7 @@ export default function Admin() {
           </div>
           {o.scan.error && <p className="error">{o.scan.error}</p>}
           <p className="muted small">New files are picked up automatically within a few seconds, and everything is re-checked every 30 minutes.</p>
-          <p className="small"><a href="/api/admin/info-template" download>Download a blank info.txt template</a></p>
+          <p className="small"><button className="link" onClick={downloadTemplate}>Download a blank info.txt template</button></p>
           {!o.tools.ffmpeg && <p className="warn small">ffmpeg isn't installed, so posters for titles without a poster file use plain placeholders.</p>}
         </div>
       </section>

@@ -1,6 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { api } from './api.js';
+import { forgetServer, getBase, hello, isNativeApp, setMediaToken, setServer } from './connection.js';
+import Connect from './pages/Connect.jsx';
 import Header from './components/Header.jsx';
 import AdminHeader from './components/AdminHeader.jsx';
 import Setup from './pages/Setup.jsx';
@@ -47,26 +49,72 @@ function AdminArea() {
 
 export default function App() {
   const [status, setStatus] = useState(null);
-  const [error, setError] = useState(null);
+  // 'finding' -> which server? 'connect' -> ask the person; 'ready' -> talking to a server.
+  const [phase, setPhase] = useState('finding');
+  const [problem, setProblem] = useState(null);
+  const [changing, setChanging] = useState(false);
+  const [server, setServerInfo] = useState(null);
   const location = useLocation();
 
   const refresh = useCallback(async () => {
     try {
-      setStatus(await api.get('/api/status'));
-      setError(null);
-    } catch {
-      setError('Cannot reach the HomeFlix server. Is it running?');
+      const s = await api.get('/api/status');
+      setMediaToken(s.mediaToken);
+      setStatus(s);
+    } catch (err) {
+      if (err.status) return; // the server answered; the page shows its own error
+      setProblem(`Lost the connection to ${getBase() || 'the server'}. Is the computer running HomeFlix switched on?`);
+      setPhase('connect');
     }
   }, []);
 
+  // Use the server this device used last; in a browser, the server that served this page.
+  const findServer = useCallback(async () => {
+    setPhase('finding');
+    const saved = getBase();
+    const candidates = saved !== null ? [saved] : isNativeApp ? [] : [''];
+    for (const c of candidates) {
+      const info = await hello(c);
+      if (info) {
+        setServer(c);
+        setServerInfo(info);
+        setPhase('ready');
+        return;
+      }
+    }
+    if (saved !== null) setProblem(`Couldn't reach the HomeFlix server at ${saved || 'this address'}.`);
+    setPhase('connect');
+  }, []);
+
+  useEffect(() => { findServer(); }, [findServer]);
+  useEffect(() => { if (phase === 'ready') refresh(); }, [phase, refresh]);
   useEffect(() => {
-    refresh();
+    window.addEventListener('signed-out', refresh);
+    return () => window.removeEventListener('signed-out', refresh);
   }, [refresh]);
 
-  if (error) return <div className="center-screen"><p>{error}</p><button className="btn" onClick={refresh}>Try again</button></div>;
+  const connected = useCallback(async (base) => {
+    setServer(base);
+    setServerInfo(await hello(base));
+    setProblem(null);
+    setChanging(false);
+    setStatus(null);
+    setPhase('ready');
+  }, []);
+
+  const changeServer = useCallback(() => {
+    forgetServer();
+    setStatus(null);
+    setProblem(null);
+    setChanging(true);
+    setPhase('connect');
+  }, []);
+
+  if (phase === 'finding') return <div className="center-screen"><div className="spinner" /></div>;
+  if (phase === 'connect') return <Connect onConnected={connected} problem={problem} autoSearch={!changing} />;
   if (!status) return <div className="center-screen"><div className="spinner" /></div>;
 
-  const ctx = { status, profile: status.profile, refresh };
+  const ctx = { status, profile: status.profile, refresh, server, changeServer };
   let body;
   if (!status.setupDone) body = <Setup />;
   else if (!status.loggedIn) body = <Login />;

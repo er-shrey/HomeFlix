@@ -1,20 +1,37 @@
-// Small fetch wrapper: JSON in, JSON out, server error messages surfaced as Error.message.
-async function request(method, url, body) {
-  const res = await fetch(url, {
-    method,
-    headers: body !== undefined ? { 'Content-Type': 'application/json' } : undefined,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-    credentials: 'same-origin',
-  });
+import { apiUrl, getToken, setToken } from './connection.js';
+
+export { media } from './connection.js';
+
+function headers(extra = {}) {
+  const token = getToken();
+  return token ? { ...extra, Authorization: `Bearer ${token}` } : extra;
+}
+
+async function handle(res, fallback) {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     // Admin settings timed out: the app shows the password prompt again.
     if (data.code === 'ADMIN_LOCKED') window.dispatchEvent(new Event('admin-locked'));
-    const err = new Error(data.error || `Request failed (${res.status})`);
+    // The server no longer knows this device (signed out elsewhere, password changed): sign in again.
+    if (data.code === 'SIGNED_OUT' && getToken()) {
+      setToken(null);
+      window.dispatchEvent(new Event('signed-out'));
+    }
+    const err = new Error(data.error || `${fallback} (${res.status})`);
     err.status = res.status;
     throw err;
   }
   return data;
+}
+
+// Small fetch wrapper: JSON in, JSON out, server error messages surfaced as Error.message.
+async function request(method, url, body) {
+  const res = await fetch(apiUrl(url), {
+    method,
+    headers: headers(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+  return handle(res, 'Request failed');
 }
 
 export const api = {
@@ -24,19 +41,19 @@ export const api = {
   del: (url) => request('DELETE', url),
   /** PUT a file or Blob as-is (used for images). */
   async putFile(url, blob) {
-    const res = await fetch(url, { method: 'PUT', body: blob, headers: { 'Content-Type': blob.type }, credentials: 'same-origin' });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || `Upload failed (${res.status})`);
-    return data;
+    const res = await fetch(apiUrl(url), { method: 'PUT', body: blob, headers: headers({ 'Content-Type': blob.type }) });
+    return handle(res, 'Upload failed');
   },
 };
 
-/** Fire-and-forget progress save that survives the tab closing. */
+/** Fire-and-forget progress save that still goes through when the page is closing. */
 export function beacon(url, body) {
-  const blob = new Blob([JSON.stringify(body)], { type: 'text/plain' });
-  if (!navigator.sendBeacon?.(url, blob)) {
-    fetch(url, { method: 'POST', body: JSON.stringify(body), headers: { 'Content-Type': 'text/plain' }, keepalive: true }).catch(() => {});
-  }
+  fetch(apiUrl(url), {
+    method: 'POST',
+    body: JSON.stringify(body),
+    headers: headers({ 'Content-Type': 'application/json' }),
+    keepalive: true,
+  }).catch(() => {});
 }
 
 export const fmtTime = (secs) => {

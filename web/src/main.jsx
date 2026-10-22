@@ -2,7 +2,10 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App.jsx';
+import { setupNative } from './native.js';
 import './styles.css';
+
+setupNative();
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>

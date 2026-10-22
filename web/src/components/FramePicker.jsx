@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { fmtTime } from '../api.js';
+import { fmtTime, media } from '../api.js';
 
 const SHAPES = {
   poster: { ratio: 2 / 3, name: 'poster' },
@@ -120,7 +120,8 @@ export default function FramePicker({ videos, kind, canSuggest, onSave, onCancel
           <video
             key={videoId}
             ref={videoRef}
-            src={`/media/video/${videoId}`}
+            src={media(`/media/video/${videoId}`)}
+            crossOrigin="anonymous"
             preload="auto"
             muted
             playsInline
@@ -163,7 +164,7 @@ export default function FramePicker({ videos, kind, canSuggest, onSave, onCancel
           <div className="fp-strip">
             {suggestions.map((t) => (
               <button type="button" key={`${videoId}-${t}`} onClick={() => seek(t)} className={Math.abs(time - t) < 0.3 ? 'on' : ''}>
-                <img src={`/api/admin/videos/${videoId}/frame?t=${t}`} alt={`Frame at ${fmtTime(t)}`} loading="lazy" />
+                <img src={media(`/media/frame/${videoId}?t=${t}`)} alt={`Frame at ${fmtTime(t)}`} loading="lazy" />
                 <span>{fmtTime(t)}</span>
               </button>
             ))}

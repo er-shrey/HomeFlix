@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { db, now, getSetting, setSetting } from '../db.js';
-import { ROOT_DIR } from '../config.js';
+import { ROOT_DIR, SERVER_VERSION } from '../config.js';
 import {
   accountExists, hashSecret, checkSecret, createSession, publicProfile, isHostRequest,
   requireLogin, requireProfile, tooManyAttempts, AVATARS, adminUnlocked, unlockAdmin, lockAdmin,
@@ -14,12 +14,19 @@ import { scanLibrary, startWatching } from '../scanner.js';
 
 const router = express.Router();
 
+// Public: lets the apps recognise a HomeFlix server when they search the network.
+router.get('/hello', (_req, res) => {
+  res.json({ app: 'homeflix', name: getSetting('household_name', 'HomeFlix'), version: SERVER_VERSION, setupDone: accountExists() });
+});
+
 router.get('/status', (req, res) => {
   res.json({
     setupDone: accountExists(),
     loggedIn: !!req.session,
     profile: publicProfile(req.profile),
     adminUnlocked: adminUnlocked(req),
+    // For <img>/<video> URLs, which can't send the Authorization header.
+    mediaToken: req.session?.media_token || null,
     householdName: getSetting('household_name', 'HomeFlix'),
     // Setup and password reset only work on the computer running HomeFlix.
     onHost: isHostRequest(req),
@@ -52,10 +59,10 @@ router.post('/setup', (req, res) => {
   db.prepare("INSERT INTO account (id, username, password_hash) VALUES (1, 'Admin', ?)").run(hashSecret(password));
   setSetting('library_path', path.resolve(lib));
   if (householdName?.trim()) setSetting('household_name', householdName.trim());
-  createSession(res);
+  const token = createSession();
   startWatching();
   scanLibrary('first setup');
-  res.json({ ok: true });
+  res.json({ ok: true, token });
 });
 
 router.post('/login', (req, res) => {
@@ -64,13 +71,13 @@ router.post('/login', (req, res) => {
   if (!acct || !checkSecret(String(req.body?.password || ''), acct.password_hash)) {
     return res.status(401).json({ error: 'That password is not right.' });
   }
-  createSession(res);
-  res.json({ ok: true });
+  const token = createSession();
+  res.json({ ok: true, token });
 });
 
 router.post('/logout', (req, res) => {
   if (req.session) db.prepare('DELETE FROM sessions WHERE token = ?').run(req.session.token);
-  res.clearCookie('homeflix_session');
+  // The token lives in the app's storage; forgetting it there finishes the sign-out.
   res.json({ ok: true });
 });
 
@@ -96,8 +103,8 @@ router.post('/reset-password', (req, res) => {
   if (!validPassword(req.body?.password)) return res.status(400).json({ error: 'The new password needs at least 4 characters.' });
   db.prepare('UPDATE account SET password_hash = ? WHERE id = 1').run(hashSecret(req.body.password));
   db.prepare('DELETE FROM sessions').run();
-  createSession(res);
-  res.json({ ok: true });
+  const token = createSession();
+  res.json({ ok: true, token });
 });
 
 router.put('/account/password', requireLogin, (req, res) => {

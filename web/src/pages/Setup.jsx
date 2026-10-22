@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api.js';
+import { setToken } from '../connection.js';
 import { useApp } from '../App.jsx';
+import ServerBadge from '../components/ServerBadge.jsx';
 
 const STEPS = ['Welcome', 'Admin password', 'Library folder'];
 
@@ -35,7 +37,8 @@ export default function Setup() {
     setBusy(true);
     setError(null);
     try {
-      await api.post('/api/setup', form);
+      const { token } = await api.post('/api/setup', form);
+      setToken(token);
       await refresh();
     } catch (err) {
       setError(err.message);
@@ -51,6 +54,7 @@ export default function Setup() {
           <h1>Almost ready</h1>
           <p className="muted">HomeFlix hasn't been set up yet. Finish the setup on the computer it's installed on, then come back here and sign in.</p>
           <button className="btn ghost" onClick={refresh}>Check again</button>
+          <ServerBadge />
         </div>
       </div>
     );

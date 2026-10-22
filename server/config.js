@@ -1,10 +1,14 @@
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const SERVER_DIR = path.dirname(fileURLToPath(import.meta.url));
+export const ROOT_DIR = path.resolve(SERVER_DIR, '..');
+export const SERVER_VERSION = JSON.parse(fs.readFileSync(path.join(SERVER_DIR, 'package.json'), 'utf8')).version;
 export const DATA_DIR = process.env.HOMEFLIX_DATA || path.join(ROOT_DIR, 'data');
 export const CACHE_DIR = path.join(DATA_DIR, 'cache');
-export const WEB_DIST = path.join(ROOT_DIR, 'web', 'dist');
+// The server also serves the web app, so any browser on the network can use HomeFlix without installing anything.
+export const WEB_DIST = process.env.HOMEFLIX_WEB || path.join(ROOT_DIR, 'web', 'dist');
 export const PORT = Number(process.env.PORT || 8080);
 
 export const VIDEO_EXTS = new Set(['.mp4', '.m4v', '.webm', '.mov', '.mkv', '.avi']);

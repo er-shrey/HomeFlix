@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { api } from '../api.js';
+import { api, media } from '../api.js';
 import FramePicker from '../components/FramePicker.jsx';
 import TitleInfoForm from '../components/TitleInfoForm.jsx';
 
@@ -59,7 +59,7 @@ function FixList({ list }) {
             {items.map((i) => (
               <li key={i.id}>
                 <Link to={`/admin/fix/${i.id}`} className="fix-row">
-                  <img src={i.poster} alt="" loading="lazy" />
+                  <img src={media(i.poster)} alt="" loading="lazy" />
                   <div className="fix-row-main">
                     <strong>{i.title}</strong>
                     <span className="muted small">{i.kind === 'series' ? 'Series' : 'Movie'} · {i.folder}</span>
@@ -131,7 +131,7 @@ function FixTitle({ id, list, onChanged }) {
     <div className="page fixer narrow-wide">
       <p><Link to="/admin/fix">← All issues ({list.items.length})</Link></p>
       <div className="fix-head">
-        <img src={t.posterUrl} alt="" />
+        <img src={media(t.posterUrl)} alt="" />
         <div>
           <h1>{t.fields.title}</h1>
           <p className="muted small">{t.kind === 'series' ? 'Series' : 'Movie'} · <code>{t.relFolder}</code></p>
@@ -165,7 +165,7 @@ function FixTitle({ id, list, onChanged }) {
           <FramePicker videos={t.videos} kind="poster" canSuggest={t.canSuggestFrames} onSave={saveArt('poster')} onCancel={() => setPicking(null)} />
         ) : (
           <div className="art-row">
-            <img className="art-poster" src={t.posterUrl} alt="" />
+            <img className="art-poster" src={media(t.posterUrl)} alt="" />
             <div>
               <p className="muted">{hasPoster
                 ? <>Using <code>{t.poster}</code> from the folder.</>
@@ -209,7 +209,7 @@ function FixTitle({ id, list, onChanged }) {
           <FramePicker videos={t.videos} kind="backdrop" canSuggest={t.canSuggestFrames} onSave={saveArt('backdrop')} onCancel={() => setPicking(null)} />
         ) : (
           <div className="art-row">
-            <img className="art-backdrop" src={t.backdropUrl} alt="" />
+            <img className="art-backdrop" src={media(t.backdropUrl)} alt="" />
             <div>
               <p className="muted">The wide picture at the top of the title page and the home screen.{hasBackdrop ? <> Using <code>{t.backdrop}</code>.</> : ' Optional: an automatic frame is used until you pick one.'}</p>
               <button className="btn secondary small" onClick={() => setPicking('backdrop')}>{hasBackdrop ? 'Change banner' : 'Choose a frame for the banner'}</button>

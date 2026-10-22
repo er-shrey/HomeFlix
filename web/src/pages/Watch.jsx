@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { api, beacon, fmtTime } from '../api.js';
+import { api, beacon, fmtTime, media } from '../api.js';
 import Stars from '../components/Stars.jsx';
 
 const SAVE_EVERY_MS = 10_000;
@@ -270,7 +270,9 @@ export default function Watch() {
       if (e.target.tagName === 'INPUT' && e.target.type !== 'range') return;
       interacted();
       poke();
-      if (e.key === ' ' || e.key === 'k') { e.preventDefault(); toggle(); }
+      // OK on a TV remote arrives as Enter: it plays/pauses unless a control button has focus.
+      const onControl = e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT';
+      if (e.key === ' ' || e.key === 'k' || e.key === 'MediaPlayPause' || (e.key === 'Enter' && !onControl)) { e.preventDefault(); toggle(); }
       else if (e.key === 'ArrowRight') seekBy(10);
       else if (e.key === 'ArrowLeft') seekBy(-10);
       else if (e.key === 'f') fullscreen();
@@ -302,7 +304,8 @@ export default function Watch() {
     >
       <video
         ref={videoRef}
-        src={info.video.src}
+        src={media(info.video.src)}
+        crossOrigin="anonymous"
         playsInline
         onLoadedMetadata={onLoaded}
         onTimeUpdate={onTime}
@@ -318,7 +321,7 @@ export default function Watch() {
         onDoubleClick={fullscreen}
       >
         {info.subtitles.map((s) => (
-          <track key={`${s.id}-${offset}`} data-id={s.id} kind="subtitles" src={`${s.src}?offset=${offset}`} srcLang={s.lang || 'und'} label={s.label} />
+          <track key={`${s.id}-${offset}`} data-id={s.id} kind="subtitles" src={media(`${s.src}?offset=${offset}`)} srcLang={s.lang || 'und'} label={s.label} />
         ))}
       </video>
 
@@ -348,7 +351,7 @@ export default function Watch() {
 
       {upNext !== null && info.next && !stillWatching && (
         <div className="up-next">
-          <img src={info.next.thumb} alt="" />
+          <img src={media(info.next.thumb)} alt="" />
           <div>
             <small>Next episode in {upNext}s</small>
             <strong>{info.next.label}</strong>

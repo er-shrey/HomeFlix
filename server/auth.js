@@ -3,7 +3,6 @@ import crypto from 'node:crypto';
 import { db, now, parseRow } from './db.js';
 
 const SESSION_DAYS = 90;
-const COOKIE = 'homeflix_session';
 
 export function hashSecret(secret) {
   const salt = crypto.randomBytes(16);
@@ -20,22 +19,24 @@ export function checkSecret(secret, stored) {
 
 export const accountExists = () => !!db.prepare('SELECT 1 FROM account WHERE id = 1').get();
 
-export function createSession(res) {
-  const token = crypto.randomBytes(32).toString('hex');
+const newToken = () => crypto.randomBytes(32).toString('hex');
+
+/**
+ * A signed-in device gets two tokens. The session token goes in the Authorization header.
+ * The media token can only fetch images, video and subtitles, because <img> and <video>
+ * can't send headers and their URLs end up in more places.
+ */
+export function createSession() {
+  const token = newToken();
   const t = now();
-  db.prepare('INSERT INTO sessions (token, profile_id, created_at, expires_at) VALUES (?, NULL, ?, ?)')
-    .run(token, t, t + SESSION_DAYS * 86400_000);
-  res.cookie(COOKIE, token, { httpOnly: true, sameSite: 'lax', maxAge: SESSION_DAYS * 86400_000 });
+  db.prepare('INSERT INTO sessions (token, media_token, profile_id, created_at, expires_at) VALUES (?, ?, NULL, ?, ?)')
+    .run(token, newToken(), t, t + SESSION_DAYS * 86400_000);
   return token;
 }
 
-function readCookie(req) {
-  const header = req.headers.cookie || '';
-  for (const part of header.split(';')) {
-    const [k, ...v] = part.trim().split('=');
-    if (k === COOKIE) return decodeURIComponent(v.join('='));
-  }
-  return null;
+function bearerToken(req) {
+  const m = (req.headers.authorization || '').match(/^Bearer\s+([a-f0-9]{64})$/i);
+  return m ? m[1] : null;
 }
 
 export function publicProfile(p) {
@@ -54,26 +55,34 @@ export function isHostRequest(req) {
   return LOOPBACK.has(req.socket.remoteAddress);
 }
 
-/** Attaches req.session and req.profile (the raw profile row) when logged in. */
+/** Attaches req.session and req.profile (the raw profile row) when signed in. */
 export function sessionMiddleware(req, _res, next) {
-  const token = readCookie(req);
+  let s = null;
+  const token = bearerToken(req);
   if (token) {
-    const s = db.prepare('SELECT * FROM sessions WHERE token = ? AND expires_at > ?').get(token, now());
-    if (s) {
-      req.session = s;
-      if (s.profile_id) req.profile = db.prepare('SELECT * FROM profiles WHERE id = ?').get(s.profile_id) || null;
+    s = db.prepare('SELECT * FROM sessions WHERE token = ? AND expires_at > ?').get(token, now());
+  } else if (req.path.startsWith('/media/') && typeof req.query.mt === 'string') {
+    // Media token: only accepted for /media URLs.
+    s = db.prepare('SELECT * FROM sessions WHERE media_token = ? AND expires_at > ?').get(req.query.mt, now());
+  }
+  if (s) {
+    if (!s.media_token) {
+      s.media_token = newToken();
+      db.prepare('UPDATE sessions SET media_token = ? WHERE token = ?').run(s.media_token, s.token);
     }
+    req.session = s;
+    if (s.profile_id) req.profile = db.prepare('SELECT * FROM profiles WHERE id = ?').get(s.profile_id) || null;
   }
   next();
 }
 
 export function requireLogin(req, res, next) {
-  if (!req.session) return res.status(401).json({ error: 'Please sign in.' });
+  if (!req.session) return res.status(401).json({ error: 'Please sign in.', code: 'SIGNED_OUT' });
   next();
 }
 
 export function requireProfile(req, res, next) {
-  if (!req.session) return res.status(401).json({ error: 'Please sign in.' });
+  if (!req.session) return res.status(401).json({ error: 'Please sign in.', code: 'SIGNED_OUT' });
   if (!req.profile) return res.status(409).json({ error: 'Choose a profile first.' });
   next();
 }
@@ -96,7 +105,7 @@ export function lockAdmin(token) {
  * recently. A device stays signed in for everyone, so the password keeps children out.
  */
 export function requireAdmin(req, res, next) {
-  if (!req.session) return res.status(401).json({ error: 'Please sign in.' });
+  if (!req.session) return res.status(401).json({ error: 'Please sign in.', code: 'SIGNED_OUT' });
   if (req.profile) return res.status(403).json({ error: 'Open Admin settings from the "Who\'s watching?" screen.' });
   if (!adminUnlocked(req)) return res.status(403).json({ error: 'Enter the Admin password to open Admin settings.', code: 'ADMIN_LOCKED' });
   // Each use pushes the idle timeout back.

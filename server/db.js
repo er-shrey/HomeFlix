@@ -171,6 +171,10 @@ CREATE TABLE IF NOT EXISTS search_history (
 // Columns added after the first release.
 const sessionCols = db.prepare('PRAGMA table_info(sessions)').all().map((c) => c.name);
 if (!sessionCols.includes('admin_until')) db.exec('ALTER TABLE sessions ADD COLUMN admin_until INTEGER');
+if (!sessionCols.includes('media_token')) {
+  db.exec('ALTER TABLE sessions ADD COLUMN media_token TEXT');
+  db.exec('CREATE INDEX IF NOT EXISTS sessions_media_token ON sessions(media_token)');
+}
 
 export const now = () => Date.now();
 

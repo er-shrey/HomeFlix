@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
+import { setToken } from '../connection.js';
 import { useApp } from '../App.jsx';
 
 /** Top bar for Admin settings, which is used without picking a profile. */
@@ -13,7 +14,8 @@ export default function AdminHeader() {
     navigate('/');
   };
   const signOut = async () => {
-    await api.post('/api/logout');
+    await api.post('/api/logout').catch(() => {});
+    setToken(null);
     await refresh();
     navigate('/');
   };

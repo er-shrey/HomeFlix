@@ -1,0 +1,13 @@
+{
+  "appId": "io.github.ershrey.homeflix",
+  "appName": "HomeFlix",
+  "webDir": "dist",
+  "backgroundColor": "#141414",
+  "server": {
+    "androidScheme": "http",
+    "cleartext": true
+  },
+  "android": {
+    "allowMixedContent": true
+  }
+}

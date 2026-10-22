@@ -432,12 +432,13 @@ for (const c of cards) {
 console.log(`Encoding ${videos.length} videos…`);
 for (const [i, v] of videos.entries()) {
   fs.mkdirSync(path.dirname(v.out), { recursive: true });
-  // Title card in the background, a small ticking test clock in the corner, a quiet tone.
+  // Title card in the background, a small ticking test clock in the corner, and a silent audio
+  // track (a test tone droned through speakers during testing, so: silence).
   execFileSync('ffmpeg', [
     '-v', 'error', '-y',
     '-loop', '1', '-framerate', '25', '-i', v.card,
     '-f', 'lavfi', '-i', 'testsrc=size=192x108:rate=25',
-    '-f', 'lavfi', '-i', 'sine=frequency=220:sample_rate=44100,volume=0.08',
+    '-f', 'lavfi', '-i', 'anullsrc=channel_layout=stereo:sample_rate=44100',
     '-filter_complex', '[0:v]format=yuv420p[bg];[1:v]format=yuv420p[clock];[bg][clock]overlay=W-w-16:H-h-16[v]',
     '-map', '[v]', '-map', '2:a', '-t', String(v.len),
     '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p',

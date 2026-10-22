@@ -1,6 +1,11 @@
 # HomeFlix
 
-A Netflix-style streaming app for the movies and shows on your own computer. Everyone at home watches from a phone, laptop or smart-TV browser over the home Wi-Fi. Nothing goes to the internet: no CDN, no cloud, no account outside your home.
+A Netflix-style streaming app for the movies and shows on your own computer. Everyone at home watches from a phone, laptop or smart-TV browser, or the **Android app for phones and TVs**, over the home Wi-Fi. Nothing goes to the internet: no CDN, no cloud, no account outside your home.
+
+HomeFlix has two parts:
+
+- **The server** (`server/`) runs on the computer that has the movies. It scans the library, streams video and keeps profiles, progress and ratings.
+- **The app** (`web/`) is what people watch on. The server also serves it to any browser at its address. The same app is packaged for Android phones, tablets and TVs (`web/android/`).
 
 - One **Admin** sign-in per device, then **"Who's watching?"** with everyone's profiles and a **+** to add one. Optional 4-digit PINs and kids profiles
 - **Continue Watching** that picks up at the exact second, on any device
@@ -31,6 +36,19 @@ Open the address it prints (for example `http://localhost:8080`) **on the comput
 - **Forgot the Admin password?** Choose *Forgot password?* on the sign-in screen **on the computer running HomeFlix** to set a new one. Other devices are signed out.
 
 To try it without your own files, `npm run mock` creates a sample library in `mock-library/` (needs ffmpeg and macOS for the poster renderer).
+
+## The Android app (phones, tablets and TVs)
+
+1. Install the APK on the phone or TV (see *Building the Android app* below).
+2. Open **HomeFlix**. It searches the Wi-Fi network for the server by itself, usually in a few seconds.
+3. If it can't find one, type the server's address and port (shown in **Admin settings → Watch on other devices**, for example `192.168.1.20` and `8080`).
+4. Sign in with the Admin password, and you're at "Who's watching?".
+
+The app remembers the server and stays signed in. **Change server** on the sign-in screen and on "Who's watching?" connects to a different one.
+
+On **Android TV**, HomeFlix appears on the home screen. The remote's arrows move between items, **OK** selects (or plays/pauses in the player), and **Back** goes back. Phones use touch as usual.
+
+The phone or TV must be on the same Wi-Fi as the server. Video streams straight from the server; nothing is stored on the device.
 
 ## Organizing the library
 
@@ -141,6 +159,8 @@ All of this runs inside the app; nothing is sent anywhere.
 - Uploading videos and subtitles through the Admin page (posters and banners can already be uploaded in the Library Fixer)
 - Optional "fetch details from the internet" (TMDB)
 - A `movies.local` address instead of an IP address
+- A signed release build of the Android app (today's APK is a debug build), and an iOS app
+- Opening the video player's subtitle/settings menus with a TV remote (playback, seeking and Back work)
 
 ## Development
 
@@ -148,6 +168,25 @@ All of this runs inside the app; nothing is sent anywhere.
 npm run dev   # API on :8080 (restarts on change) + Vite on :5173 with hot reload
 ```
 
-- `server/`: Express + Node's built-in SQLite. The database and thumbnail cache are in `data/`; delete it to start over.
-- `web/`: React + Vite. `npm run build` outputs to `web/dist/`, which the server serves.
-- `scripts/make-mock-library.js`: the sample library.
+It's an npm workspace with two packages:
+
+- `server/` (`@homeflix/server`): Express + Node's built-in SQLite. The database and thumbnail cache are in `data/` at the repo root; delete it to start over. Set `PORT` to change the port (default 8080).
+- `web/` (`@homeflix/web`): React + Vite, plus Capacitor for Android. `npm run build` outputs to `web/dist/`, which the server serves (`HOMEFLIX_WEB` points elsewhere).
+- `scripts/make-mock-library.js`: the sample library (silent test videos). `scripts/render-app-icons.swift`: the Android icons, TV banner and splash screens.
+
+### How the app talks to the server
+
+- `GET /api/hello` (no sign-in) identifies a HomeFlix server; the app's network search looks for it.
+- Signing in returns a token, which the app sends as `Authorization: Bearer …`. There are no cookies, so the API allows any origin (CORS).
+- Images, video and subtitles can't send headers, so their URLs carry a separate **media token** (`?mt=…`). It works only for `/media/…` and can't open the API or Admin settings.
+- In the Android app, a small native plugin (`NetInfoPlugin.java`) reports the device's Wi-Fi address, so the search only scans that network (254 addresses, 48 at a time).
+
+### Building the Android app
+
+Needs the Android SDK and Java 21.
+
+```bash
+npm run android:apk
+```
+
+The APK is written to `web/android/app/build/outputs/apk/debug/app-debug.apk`. Install it with `adb install -r <apk>` or by copying it to the device. To open the project in Android Studio, run `npm run android:open -w web`.

@@ -121,6 +121,17 @@ router.get('/thumb/:id', async (req, res) => {
   sendPlaceholder(res, v.episode_title || t.title, true);
 });
 
+// A still at any moment, for the Library Fixer's frame suggestions (needs ffmpeg).
+router.get('/frame/:id', async (req, res) => {
+  const { v } = videoFor(req, res);
+  if (!v) return;
+  const t = Math.max(0, Math.round((Number(req.query.t) || 0) * 10) / 10);
+  const file = await frameThumbnail(v.path, v.mtime, t, 320);
+  if (!file) return res.status(404).end();
+  res.setHeader('Cache-Control', 'private, max-age=3600');
+  res.sendFile(file);
+});
+
 router.get('/sub/:id.vtt', async (req, res) => {
   const s = db.prepare('SELECT s.*, v.title_id, v.mtime, v.sub_offset_ms FROM subtitles s JOIN videos v ON v.id = s.video_id WHERE s.id = ?').get(Number(req.params.id));
   const t = s && library().byId.get(s.title_id);

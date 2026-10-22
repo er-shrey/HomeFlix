@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { media } from '../api.js';
 
 /**
  * A title card. `wide` cards (Continue Watching) show a 16:9 frame and play directly;
@@ -10,7 +11,7 @@ export default function Card({ item, wide = false, onMenu }) {
     if (wide && item.videoId) navigate(`/watch/${item.videoId}`);
     else navigate(`/title/${item.id}`);
   };
-  const img = wide ? (item.thumb || item.backdrop) : item.poster;
+  const img = media(wide ? (item.thumb || item.backdrop) : item.poster);
   return (
     <div className={`card ${wide ? 'wide' : ''}`}>
       <button className="card-img" onClick={open} aria-label={item.title}>

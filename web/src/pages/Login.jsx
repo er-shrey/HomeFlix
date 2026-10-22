@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { api } from '../api.js';
+import { setToken } from '../connection.js';
 import { useApp } from '../App.jsx';
+import ServerBadge from '../components/ServerBadge.jsx';
 
 export default function Login() {
   const { refresh, status } = useApp();
@@ -15,7 +17,8 @@ export default function Login() {
     setBusy(true);
     setError(null);
     try {
-      await api.post('/api/login', { password });
+      const { token } = await api.post('/api/login', { password });
+      setToken(token);
       await refresh();
     } catch (err) {
       setError(err.message);
@@ -29,7 +32,8 @@ export default function Login() {
     setBusy(true);
     setError(null);
     try {
-      await api.post('/api/reset-password', { password: next.a });
+      const { token } = await api.post('/api/reset-password', { password: next.a });
+      setToken(token);
       await refresh();
     } catch (err) {
       setError(err.message);
@@ -72,6 +76,7 @@ export default function Login() {
         {error && <p className="error">{error}</p>}
         <button className="btn primary block" disabled={busy}>{busy ? 'Signing in…' : 'Sign in'}</button>
         <button type="button" className="link" onClick={() => { setResetting(true); setError(null); }}>Forgot password?</button>
+        <ServerBadge />
       </form>
     </div>
   );

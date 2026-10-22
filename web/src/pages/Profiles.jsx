@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api.js';
+import { setToken } from '../connection.js';
 import { useApp } from '../App.jsx';
 import Avatar from '../components/Avatar.jsx';
 import PinPad from '../components/PinPad.jsx';
 import ProfileForm from '../components/ProfileForm.jsx';
+import ServerBadge from '../components/ServerBadge.jsx';
 
 /** "Who's watching?": the main screen after the Admin signs in on a device. */
 export default function Profiles() {
@@ -38,7 +40,8 @@ export default function Profiles() {
   const cancelPin = useCallback(() => { setPinFor(null); setError(null); }, []);
 
   const signOut = async () => {
-    await api.post('/api/logout');
+    await api.post('/api/logout').catch(() => {});
+    setToken(null);
     await refresh();
   };
 
@@ -71,6 +74,7 @@ export default function Profiles() {
         )}
       </div>
       {error && !pinFor && <p className="error">{error}</p>}
+      <ServerBadge />
 
       {pinFor && <PinPad title={`Enter ${pinFor.name}'s PIN`} error={error} onSubmit={onPin} onCancel={cancelPin} />}
       {adding && (
