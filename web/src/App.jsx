@@ -14,6 +14,7 @@ import History from './pages/History.jsx';
 import Settings from './pages/Settings.jsx';
 import Admin from './pages/Admin.jsx';
 import EditTitle from './pages/EditTitle.jsx';
+import Fixer from './pages/Fixer.jsx';
 
 const AppContext = createContext(null);
 export const useApp = () => useContext(AppContext);
@@ -60,6 +61,8 @@ export default function App() {
           <Route path="/profiles" element={<Profiles />} />
           <Route path="/admin" element={status.profile.isAdmin ? <Admin /> : <Navigate to="/" />} />
           <Route path="/admin/title/:id" element={status.profile.isAdmin ? <EditTitle /> : <Navigate to="/" />} />
+          <Route path="/admin/fix" element={status.profile.isAdmin ? <Fixer /> : <Navigate to="/" />} />
+          <Route path="/admin/fix/:id" element={status.profile.isAdmin ? <Fixer /> : <Navigate to="/" />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </>

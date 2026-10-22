@@ -57,6 +57,7 @@ export default function Header() {
               <Link to="/history">Viewing history</Link>
               <Link to="/settings">Profile & subtitles</Link>
               {profile.isAdmin && <Link to="/admin">Admin: library & profiles</Link>}
+              {profile.isAdmin && <Link to="/admin/fix">Fix missing posters & info</Link>}
               <button onClick={signOut}>Sign out of HomeFlix</button>
             </div>
           )}

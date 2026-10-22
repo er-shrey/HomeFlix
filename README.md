@@ -53,6 +53,11 @@ Library/
 
 **The one rule:** a `.txt`, `.jpg` or `.srt` with the same name as a video belongs to that video.
 
+**Only have the video files?** That's fine. Drop them in, then open **Admin → Library Fixer**. It lists every title missing a poster, an info file or key details. Pick one and:
+
+- **Poster or banner:** play the video, jump to a suggested moment or step frame by frame, move the crop, and save. The frame is saved as `poster.jpg` / `backdrop.jpg` in the folder (`<file name>-poster.jpg` next to a loose video file). You can upload your own picture instead. A poster that's being replaced is kept as `poster.replaced-<date>.jpg`, never deleted.
+- **Info file missing:** fill in a short form (title and year are guessed from the folder name) and HomeFlix creates `info.txt` for you.
+
 New files show up within a few seconds. Everything is re-checked when the app starts and every 30 minutes. **Scan now** on the Admin page re-checks right away.
 
 ### info.txt
@@ -125,7 +130,7 @@ All of this runs inside the app; nothing is sent anywhere.
 - One-click installers for Windows and macOS (with Node and ffmpeg bundled)
 - Converting MKV/HEVC files to browser-friendly MP4
 - Switching between several audio tracks in one file
-- Uploading files and subtitles through the Admin page
+- Uploading videos and subtitles through the Admin page (posters and banners can already be uploaded in the Library Fixer)
 - Optional "fetch details from the internet" (TMDB)
 - A `movies.local` address instead of an IP address
 

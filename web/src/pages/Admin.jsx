@@ -162,6 +162,12 @@ export default function Admin() {
       <section className="card-box">
         <h2>Needs attention {issues > 0 && <span className="count">{issues}</span>}</h2>
         {!issues && <p className="muted">Everything looks good.</p>}
+        {(h.needsInfo.length > 0 || h.mismatches.length > 0) && (
+          <div className="fixer-callout">
+            <span><b>{new Set([...h.needsInfo, ...h.mismatches].map((x) => x.id)).size} titles</b> are missing a poster, info file or details.</span>
+            <Link className="btn primary small" to="/admin/fix">Open Library Fixer</Link>
+          </div>
+        )}
         {h.needsInfo.length > 0 && (
           <>
             <h3>Missing details</h3>
@@ -169,7 +175,7 @@ export default function Admin() {
               {h.needsInfo.map((t) => (
                 <li key={t.id}>
                   <span><b>{t.title}</b> <span className="muted">missing {t.missing.join(', ')}</span></span>
-                  <Link className="btn secondary small" to={`/admin/title/${t.id}`}>Fill in</Link>
+                  <Link className="btn secondary small" to={`/admin/fix/${t.id}`}>Fix</Link>
                 </li>
               ))}
             </ul>
@@ -179,7 +185,7 @@ export default function Admin() {
           <>
             <h3>Subtitle mismatches</h3>
             <ul className="issue-list">
-              {h.mismatches.map((m) => <li key={m.id}><span><b>{m.title}</b>: <span className="muted">{m.message}</span></span><Link className="btn secondary small" to={`/admin/title/${m.id}`}>Edit</Link></li>)}
+              {h.mismatches.map((m) => <li key={m.id}><span><b>{m.title}</b>: <span className="muted">{m.message}</span></span><Link className="btn secondary small" to={`/admin/fix/${m.id}`}>Fix</Link></li>)}
             </ul>
           </>
         )}

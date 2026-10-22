@@ -20,6 +20,13 @@ export const api = {
   post: (url, body = {}) => request('POST', url, body),
   put: (url, body = {}) => request('PUT', url, body),
   del: (url) => request('DELETE', url),
+  /** PUT a file or Blob as-is (used for images). */
+  async putFile(url, blob) {
+    const res = await fetch(url, { method: 'PUT', body: blob, headers: { 'Content-Type': blob.type }, credentials: 'same-origin' });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `Upload failed (${res.status})`);
+    return data;
+  },
 };
 
 /** Fire-and-forget progress save that survives the tab closing. */

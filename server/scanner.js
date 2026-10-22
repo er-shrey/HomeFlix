@@ -287,8 +287,8 @@ async function scanLooseMovie(dir, entry, entries) {
     fields,
     extraLines: info?.extraLines,
     fallback: parseFolderName(stem(entry.name)),
-    poster: findFile(entries, dir, [base], IMAGE_EXTS),
-    backdrop: null,
+    poster: findFile(entries, dir, [`${base}-poster`, `${base}.poster`, base], IMAGE_EXTS),
+    backdrop: findFile(entries, dir, [`${base}-backdrop`, `${base}.backdrop`, `${base}-fanart`], IMAGE_EXTS),
     trailer: null,
   });
   await upsertVideo({ titleId, file, intro: fields.intro || null, credits: fields.credits || null, subtitles: subtitleFilesFor(entry.name, entries, dir, false) });
@@ -449,6 +449,12 @@ export async function scanLibrary(reason = 'manual') {
     libraryEvents.emit('changed');
   }
   if (scanState.queued) scanLibrary('queued');
+}
+
+/** Run a scan (or join the one in progress) and resolve once the index is up to date. */
+export async function scanAndWait(reason) {
+  await scanLibrary(reason);
+  while (scanState.running || scanState.queued) await new Promise((r) => setTimeout(r, 100));
 }
 
 // ---------------------------------------------------------------------------

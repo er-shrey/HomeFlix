@@ -1,5 +1,6 @@
 // Shared catalog logic: what a profile may see, how titles become cards,
 // watch progress, Continue Watching and "up next".
+import fs from 'node:fs';
 import { db, now, parseRow } from './db.js';
 import { ageFromRating, parseRange, parseCredits } from './infofile.js';
 
@@ -177,6 +178,16 @@ export function continueWatching(profile) {
 // ---------------------------------------------------------------------------
 // Cards
 
+/** Modified time of an artwork file (0 when it's generated), used as a cache-busting version. */
+export function artVersion(file) {
+  if (!file) return 0;
+  try {
+    return Math.round(fs.statSync(file).mtimeMs);
+  } catch {
+    return 0;
+  }
+}
+
 export function card(title, extra = {}) {
   return {
     id: title.id,
@@ -187,8 +198,9 @@ export function card(title, extra = {}) {
     language: title.language,
     genres: title.genres,
     hasCC: title.hasCC,
-    poster: `/media/poster/${title.id}`,
-    backdrop: `/media/backdrop/${title.id}`,
+    // The version makes browsers fetch a new image after a poster is changed.
+    poster: `/media/poster/${title.id}?v=${artVersion(title.poster_path)}`,
+    backdrop: `/media/backdrop/${title.id}?v=${artVersion(title.backdrop_path)}`,
     hasBackdrop: !!title.backdrop_path,
     seasons: title.kind === 'series' ? new Set(title.videos.map((v) => v.season_number)).size : null,
     ...extra,
