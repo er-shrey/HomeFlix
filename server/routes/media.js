@@ -3,13 +3,14 @@ import express from 'express';
 import fs from 'node:fs';
 import path from 'node:path';
 import { db } from '../db.js';
-import { requireProfile } from '../auth.js';
+import { requireLogin } from '../auth.js';
 import { library, canSee } from '../catalog.js';
 import { frameThumbnail, placeholderSvg, extractSubtitle, convertSubtitleFile } from '../media.js';
 import { readSubtitleText, toVtt } from '../subtitles.js';
 
 const router = express.Router();
-router.use(requireProfile);
+// Signed in is enough: Admin settings (no profile) shows artwork and plays video in the Library Fixer.
+router.use(requireLogin);
 
 const MIME = {
   '.mp4': 'video/mp4', '.m4v': 'video/mp4', '.webm': 'video/webm', '.mov': 'video/quicktime',

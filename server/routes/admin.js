@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import QRCode from 'qrcode';
 import { db, getSetting, setSetting, parseRow } from '../db.js';
-import { requireProfile, requireAdmin } from '../auth.js';
+import { requireAdmin } from '../auth.js';
 import { BROWSER_SAFE_EXTS, PORT } from '../config.js';
 import { scanLibrary, scanAndWait, scanState, startWatching } from '../scanner.js';
 import { formatInfoText, writeFileAtomic, INFO_TEMPLATE } from '../infofile.js';
@@ -13,7 +13,7 @@ import { lookupLanguage } from '../subtitles.js';
 import { artVersion } from '../catalog.js';
 
 const router = express.Router();
-router.use(requireProfile, requireAdmin);
+router.use(requireAdmin);
 
 export function lanAddresses() {
   const out = [];

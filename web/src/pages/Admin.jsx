@@ -1,64 +1,44 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api.js';
-import { useApp } from '../App.jsx';
-import Avatar, { AVATAR_COLORS } from '../components/Avatar.jsx';
+import Avatar from '../components/Avatar.jsx';
+import ProfileForm from '../components/ProfileForm.jsx';
 
-function ProfileEditor({ profile, onSaved, onCancel }) {
-  const isNew = !profile.id;
-  const [f, setF] = useState({ name: profile.name || '', avatar: profile.avatar || 'blue', isKid: !!profile.isKid, maxAge: profile.maxAge ?? 12, pin: '' });
+function PasswordCard() {
+  const [f, setF] = useState({ current: '', next: '', again: '' });
+  const [msg, setMsg] = useState(null);
   const [error, setError] = useState(null);
   const save = async (e) => {
     e.preventDefault();
+    setMsg(null);
     setError(null);
+    if (f.next !== f.again) return setError('The two new passwords are different.');
     try {
-      const body = { name: f.name, avatar: f.avatar, isKid: f.isKid, maxAge: f.maxAge };
-      if (f.pin === 'remove') body.pin = '';
-      else if (f.pin) body.pin = f.pin;
-      if (isNew) await api.post('/api/profiles', body); else await api.put(`/api/profiles/${profile.id}`, body);
-      onSaved();
+      await api.put('/api/account/password', { current: f.current, next: f.next });
+      setF({ current: '', next: '', again: '' });
+      setMsg('Password changed. Other devices need to sign in again with the new one.');
     } catch (err) {
       setError(err.message);
     }
   };
   return (
-    <form className="form card-box" onSubmit={save}>
-      <h3>{isNew ? 'Add a profile' : `Edit ${profile.name}`}</h3>
-      <label>Name<input autoFocus value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} /></label>
-      <div className="swatches">
-        {Object.entries(AVATAR_COLORS).map(([k, c]) => (
-          <button type="button" key={k} className={`swatch ${f.avatar === k ? 'on' : ''}`} style={{ background: c }} onClick={() => setF({ ...f, avatar: k })} aria-label={k} />
-        ))}
-      </div>
-      {!profile.isAdmin && (
-        <>
-          <label className="check"><input type="checkbox" checked={f.isKid} onChange={(e) => setF({ ...f, isKid: e.target.checked })} /> Kids profile (only shows titles rated for their age)</label>
-          {f.isKid && (
-            <label>Maximum age rating
-              <select value={f.maxAge} onChange={(e) => setF({ ...f, maxAge: Number(e.target.value) })}>
-                <option value={0}>All ages only (U / G)</option>
-                <option value={7}>7+</option>
-                <option value={12}>12+</option>
-                <option value={13}>13+</option>
-                <option value={16}>16+</option>
-              </select>
-            </label>
-          )}
-        </>
-      )}
-      <label>PIN {profile.hasPin ? '(has one)' : '(optional)'}<input inputMode="numeric" maxLength={4} value={f.pin === 'remove' ? '' : f.pin} onChange={(e) => setF({ ...f, pin: e.target.value })} placeholder="4 digits" /></label>
-      {profile.hasPin && <label className="check"><input type="checkbox" checked={f.pin === 'remove'} onChange={(e) => setF({ ...f, pin: e.target.checked ? 'remove' : '' })} /> Remove PIN</label>}
-      {error && <p className="error">{error}</p>}
-      <div className="auth-actions">
-        <button type="button" className="btn ghost" onClick={onCancel}>Cancel</button>
-        <button className="btn primary">Save</button>
-      </div>
-    </form>
+    <section className="card-box">
+      <h2>Admin password</h2>
+      <form className="form password-form" onSubmit={save}>
+        <label>Current password<input type="password" value={f.current} onChange={(e) => setF({ ...f, current: e.target.value })} autoComplete="current-password" /></label>
+        <div className="form-2">
+          <label>New password<input type="password" value={f.next} onChange={(e) => setF({ ...f, next: e.target.value })} autoComplete="new-password" /></label>
+          <label>Type it again<input type="password" value={f.again} onChange={(e) => setF({ ...f, again: e.target.value })} autoComplete="new-password" /></label>
+        </div>
+        {error && <p className="error">{error}</p>}
+        {msg && <p className="ok">{msg}</p>}
+        <div><button className="btn primary small" disabled={!f.current || !f.next}>Change password</button></div>
+      </form>
+    </section>
   );
 }
 
 export default function Admin() {
-  const { refresh } = useApp();
   const [o, setO] = useState(null);
   const [profiles, setProfiles] = useState([]);
   const [editing, setEditing] = useState(null);
@@ -121,7 +101,7 @@ export default function Admin() {
 
   return (
     <div className="page admin">
-      <h1>Admin</h1>
+      <h1>Admin settings</h1>
 
       <section className="admin-grid">
         <div className="card-box">
@@ -221,16 +201,19 @@ export default function Admin() {
           {profiles.map((p) => (
             <li key={p.id}>
               <Avatar profile={p} size={40} />
-              <span className="grow"><b>{p.name}</b> <span className="muted small">{p.isAdmin ? 'Admin' : ''}{p.isKid ? `Kids, up to ${p.maxAge || 'all ages'}${p.maxAge ? '+' : ''}` : ''}{p.hasPin ? ' · PIN' : ''}</span></span>
+              <span className="grow"><b>{p.name}</b> <span className="muted small">{p.isKid ? `Kids, up to ${p.maxAge ? `${p.maxAge}+` : 'all ages'}` : ''}{p.isKid && p.hasPin ? ' · ' : ''}{p.hasPin ? 'PIN' : ''}</span></span>
               <button className="btn secondary small" onClick={() => setEditing(p)}>Edit</button>
-              {!p.isAdmin && <button className="btn ghost small" onClick={() => deleteProfile(p)}>Delete</button>}
+              <button className="btn ghost small" onClick={() => deleteProfile(p)}>Remove</button>
             </li>
           ))}
         </ul>
+        {!profiles.length && <p className="muted">No profiles yet. Add one here or with the + on the "Who's watching?" screen.</p>}
         {editing
-          ? <ProfileEditor profile={editing} onCancel={() => setEditing(null)} onSaved={() => { setEditing(null); load(); refresh(); }} />
+          ? <div className="card-box inset"><h3>{editing.id ? `Edit ${editing.name}` : 'Add a profile'}</h3><ProfileForm profile={editing} onCancel={() => setEditing(null)} onSaved={() => { setEditing(null); load(); }} /></div>
           : <button className="btn primary small" onClick={() => setEditing({})}>+ Add profile</button>}
       </section>
+
+      <PasswordCard />
     </div>
   );
 }

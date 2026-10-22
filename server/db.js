@@ -168,6 +168,10 @@ CREATE TABLE IF NOT EXISTS search_history (
 );
 `);
 
+// Columns added after the first release.
+const sessionCols = db.prepare('PRAGMA table_info(sessions)').all().map((c) => c.name);
+if (!sessionCols.includes('admin_until')) db.exec('ALTER TABLE sessions ADD COLUMN admin_until INTEGER');
+
 export const now = () => Date.now();
 
 export function getSetting(key, fallback = null) {

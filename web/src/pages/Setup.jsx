@@ -2,12 +2,12 @@ import { useEffect, useState } from 'react';
 import { api } from '../api.js';
 import { useApp } from '../App.jsx';
 
-const STEPS = ['Welcome', 'Sign-in', 'Your profile', 'Library folder'];
+const STEPS = ['Welcome', 'Admin password', 'Library folder'];
 
 export default function Setup() {
-  const { refresh } = useApp();
+  const { refresh, status } = useApp();
   const [step, setStep] = useState(0);
-  const [form, setForm] = useState({ householdName: '', username: '', password: '', password2: '', profileName: '', pin: '', libraryPath: '' });
+  const [form, setForm] = useState({ householdName: '', password: '', password2: '', libraryPath: '' });
   const [suggestions, setSuggestions] = useState([]);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -24,13 +24,8 @@ export default function Setup() {
   const next = () => {
     setError(null);
     if (step === 1) {
-      if (!form.username.trim()) return setError('Pick a username.');
       if (form.password.length < 4) return setError('The password needs at least 4 characters.');
       if (form.password !== form.password2) return setError('The two passwords are different.');
-    }
-    if (step === 2) {
-      if (!form.profileName.trim()) return setError('Type your name.');
-      if (form.pin && !/^\d{4}$/.test(form.pin)) return setError('A PIN is exactly 4 numbers, or leave it empty.');
     }
     setStep(step + 1);
   };
@@ -48,10 +43,23 @@ export default function Setup() {
     }
   };
 
+  if (!status.onHost) {
+    return (
+      <div className="auth-screen">
+        <div className="logo big">HOMEFLIX</div>
+        <div className="auth-box">
+          <h1>Almost ready</h1>
+          <p className="muted">HomeFlix hasn't been set up yet. Finish the setup on the computer it's installed on, then come back here and sign in.</p>
+          <button className="btn ghost" onClick={refresh}>Check again</button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="auth-screen">
       <div className="logo big">HOMEFLIX</div>
-      <form className="auth-box wide" onSubmit={step === 3 ? finish : (e) => { e.preventDefault(); next(); }}>
+      <form className="auth-box wide" onSubmit={step === 2 ? finish : (e) => { e.preventDefault(); next(); }}>
         <ol className="steps">{STEPS.map((s, i) => <li key={s} className={i === step ? 'on' : i < step ? 'done' : ''}>{s}</li>)}</ol>
 
         {step === 0 && (
@@ -64,22 +72,14 @@ export default function Setup() {
         )}
         {step === 1 && (
           <>
-            <h1>Create the household sign-in</h1>
-            <p className="muted">Everyone at home uses this once per device. After that, each person picks their own profile.</p>
-            <label>Username<input autoFocus value={form.username} onChange={set('username')} autoComplete="username" /></label>
-            <label>Password<input type="password" value={form.password} onChange={set('password')} autoComplete="new-password" /></label>
+            <h1>Create the Admin password</h1>
+            <p className="muted">HomeFlix has one sign-in: <b>Admin</b>. Sign in once on each phone, laptop or TV; after that it opens straight to "Who's watching?", where everyone picks their profile.</p>
+            <p className="muted small">The Admin password also opens Admin settings (library, profiles). Keep it to yourself.</p>
+            <label>Password<input type="password" autoFocus value={form.password} onChange={set('password')} autoComplete="new-password" /></label>
             <label>Type the password again<input type="password" value={form.password2} onChange={set('password2')} autoComplete="new-password" /></label>
           </>
         )}
         {step === 2 && (
-          <>
-            <h1>Your profile</h1>
-            <p className="muted">This is the admin profile. It can add movies, manage profiles and change settings.</p>
-            <label>Your name<input autoFocus value={form.profileName} onChange={set('profileName')} /></label>
-            <label>4-digit PIN (optional, recommended for the admin)<input inputMode="numeric" maxLength={4} value={form.pin} onChange={set('pin')} placeholder="Leave empty for no PIN" /></label>
-          </>
-        )}
-        {step === 3 && (
           <>
             <h1>Where are your movies?</h1>
             <p className="muted">Choose the folder that has a <b>Movies</b> folder and/or a <b>Series</b> folder inside it.</p>
@@ -106,7 +106,7 @@ export default function Setup() {
         {error && <p className="error">{error}</p>}
         <div className="auth-actions">
           {step > 0 && <button type="button" className="btn ghost" onClick={() => { setError(null); setStep(step - 1); }}>Back</button>}
-          <button type="submit" className="btn primary" disabled={busy}>{step === 3 ? (busy ? 'Setting up…' : 'Finish setup') : 'Next'}</button>
+          <button type="submit" className="btn primary" disabled={busy}>{step === 2 ? (busy ? 'Setting up…' : 'Finish setup') : 'Next'}</button>
         </div>
       </form>
     </div>

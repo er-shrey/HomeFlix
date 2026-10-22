@@ -8,6 +8,8 @@ async function request(method, url, body) {
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
+    // Admin settings timed out: the app shows the password prompt again.
+    if (data.code === 'ADMIN_LOCKED') window.dispatchEvent(new Event('admin-locked'));
     const err = new Error(data.error || `Request failed (${res.status})`);
     err.status = res.status;
     throw err;

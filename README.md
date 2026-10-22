@@ -2,7 +2,7 @@
 
 A Netflix-style streaming app for the movies and shows on your own computer. Everyone at home watches from a phone, laptop or smart-TV browser over the home Wi-Fi. Nothing goes to the internet: no CDN, no cloud, no account outside your home.
 
-- One household sign-in, then **"Who's watching?"** profiles with optional 4-digit PINs and kids profiles
+- One **Admin** sign-in per device, then **"Who's watching?"** with everyone's profiles and a **+** to add one. Optional 4-digit PINs and kids profiles
 - **Continue Watching** that picks up at the exact second, on any device
 - **Series** with seasons, auto "up next", Skip Intro and "Are you still watching?"
 - **5-star ratings**, asked once at the end of a movie, after 3 episodes and at the end of each season
@@ -20,7 +20,15 @@ npm run build
 npm start
 ```
 
-Open the address it prints (for example `http://localhost:8080`). The setup wizard asks for a household sign-in, your name and the library folder. Other devices use the network address shown on the **Admin** page, which also has a QR code to scan.
+Open the address it prints (for example `http://localhost:8080`) **on the computer running HomeFlix**. The first-time setup asks for just two things: an **Admin password** and the library folder. Setup only works on that computer, so nobody else on the Wi-Fi can make themselves Admin first.
+
+### Signing in and profiles
+
+- There's one sign-in: **Admin**, with just a password. Sign in once on each phone, laptop or TV; the device stays signed in.
+- After signing in you see **"Who's watching?"**: tap a profile to watch, or the big **+** to add one (name, colour, optional PIN, kids limits).
+- The Admin is a role, not a profile. **⚙ Admin settings** at the top of that screen asks for the Admin password **every time** (a signed-in device is shared by the whole family), and locks again when you go back to the profiles, start watching, or leave it idle for 10 minutes. It opens the library settings, the Library Fixer, the network address with a QR code for other devices, profile editing and removal, and the Admin password.
+- Inside a profile, the menu only has *Switch profile*, *Viewing history* and *Profile & subtitles*. A kids profile can't lift its own age limit, and can't get into Admin settings without the password.
+- **Forgot the Admin password?** Choose *Forgot password?* on the sign-in screen **on the computer running HomeFlix** to set a new one. Other devices are signed out.
 
 To try it without your own files, `npm run mock` creates a sample library in `mock-library/` (needs ffmpeg and macOS for the poster renderer).
 

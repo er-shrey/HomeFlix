@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useState } from 'rea
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { api } from './api.js';
 import Header from './components/Header.jsx';
+import AdminHeader from './components/AdminHeader.jsx';
 import Setup from './pages/Setup.jsx';
 import Login from './pages/Login.jsx';
 import Profiles from './pages/Profiles.jsx';
@@ -15,9 +16,34 @@ import Settings from './pages/Settings.jsx';
 import Admin from './pages/Admin.jsx';
 import EditTitle from './pages/EditTitle.jsx';
 import Fixer from './pages/Fixer.jsx';
+import AdminUnlock from './pages/AdminUnlock.jsx';
 
 const AppContext = createContext(null);
 export const useApp = () => useContext(AppContext);
+
+/**
+ * Admin settings ask for the Admin password every time they're opened (and again after
+ * 10 idle minutes). Unlocking also closes any profile that was being watched.
+ */
+function AdminArea() {
+  const { status, refresh } = useApp();
+  useEffect(() => {
+    window.addEventListener('admin-locked', refresh);
+    return () => window.removeEventListener('admin-locked', refresh);
+  }, [refresh]);
+  if (!status.adminUnlocked) return <AdminUnlock />;
+  return (
+    <>
+      <AdminHeader />
+      <Routes>
+        <Route path="/admin" element={<Admin />} />
+        <Route path="/admin/title/:id" element={<EditTitle />} />
+        <Route path="/admin/fix" element={<Fixer />} />
+        <Route path="/admin/fix/:id" element={<Fixer />} />
+      </Routes>
+    </>
+  );
+}
 
 export default function App() {
   const [status, setStatus] = useState(null);
@@ -44,6 +70,7 @@ export default function App() {
   let body;
   if (!status.setupDone) body = <Setup />;
   else if (!status.loggedIn) body = <Login />;
+  else if (location.pathname.startsWith('/admin')) body = <AdminArea />;
   else if (!status.profile) body = <Profiles />;
   else {
     const watching = location.pathname.startsWith('/watch/');
@@ -58,11 +85,6 @@ export default function App() {
           <Route path="/mylist" element={<MyList />} />
           <Route path="/history" element={<History />} />
           <Route path="/settings" element={<Settings />} />
-          <Route path="/profiles" element={<Profiles />} />
-          <Route path="/admin" element={status.profile.isAdmin ? <Admin /> : <Navigate to="/" />} />
-          <Route path="/admin/title/:id" element={status.profile.isAdmin ? <EditTitle /> : <Navigate to="/" />} />
-          <Route path="/admin/fix" element={status.profile.isAdmin ? <Fixer /> : <Navigate to="/" />} />
-          <Route path="/admin/fix/:id" element={status.profile.isAdmin ? <Fixer /> : <Navigate to="/" />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </>

@@ -425,3 +425,33 @@ label.check input { width: auto !important; }
 .fp-strip img { width: 100%; aspect-ratio: 16/9; object-fit: cover; }
 .fp-strip span { font-size: .75rem; color: var(--muted); padding: 2px 0 4px; }
 .fp-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+
+/* ---------- Who's watching? (picker) & Admin ---------- */
+.profiles-screen { position: relative; }
+.picker-top { position: absolute; top: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px var(--gutter); }
+.picker-actions { display: flex; align-items: center; gap: 16px; }
+.household-name { margin-top: -20px; }
+.add-tile { color: #808080; }
+.profile-tile .add-circle {
+  width: 120px; height: 120px; border-radius: 50%; border: 3px solid #666; display: flex; align-items: center; justify-content: center;
+  font-size: 72px; font-weight: 200; line-height: 1; color: #999; transition: border-color .15s, color .15s, background .15s;
+}
+.add-tile:hover .add-circle, .add-tile:focus-visible .add-circle { border-color: #fff; color: #fff; background: rgba(255,255,255,.06); }
+.profile-tile .add-circle + span { font-size: 1.1rem; }
+@media (max-width: 600px) { .profile-tile .add-circle { width: 84px; height: 84px; font-size: 52px; } }
+.sheet.wide-sheet { width: min(480px, 100%); padding: 24px; max-height: 92vh; overflow-y: auto; }
+.sheet.wide-sheet .form button { text-align: center; }
+.sheet.wide-sheet .swatch { padding: 0; }
+.profile-form .avatar-row { margin-bottom: 4px; }
+.card-box.inset { background: var(--bg-3); margin-top: 12px; }
+.admin-header .logo { font-size: 1.4rem; }
+.admin-badge { background: var(--red); color: #fff; font-size: .7rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; padding: 2px 8px; border-radius: 4px; margin-left: -6px; }
+.password-form { max-width: 520px; }
+.admin-header .nav a { white-space: nowrap; }
+.show-sm { display: none; }
+@media (max-width: 600px) {
+  .show-sm { display: inline; }
+  .admin-header { gap: 10px; }
+  .admin-header .logo { font-size: 1.1rem; }
+  .admin-badge { display: none; }
+}

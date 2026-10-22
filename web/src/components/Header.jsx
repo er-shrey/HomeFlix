@@ -26,8 +26,9 @@ export default function Header() {
     return () => document.removeEventListener('mousedown', close);
   }, [menu]);
 
-  const signOut = async () => {
-    await api.post('/api/logout');
+  // Back to "Who's watching?", where Admin settings and sign-out also live.
+  const switchProfile = async () => {
+    await api.post('/api/profiles/leave');
     await refresh();
     navigate('/');
   };
@@ -53,12 +54,9 @@ export default function Header() {
           {menu && (
             <div className="dropdown" onClick={() => setMenu(false)}>
               <div className="dropdown-head"><Avatar profile={profile} size={28} /> {profile.name}{profile.isKid && <span className="kid-tag">Kids</span>}</div>
-              <Link to="/profiles">Switch profile</Link>
+              <button onClick={switchProfile}>Switch profile</button>
               <Link to="/history">Viewing history</Link>
               <Link to="/settings">Profile & subtitles</Link>
-              {profile.isAdmin && <Link to="/admin">Admin: library & profiles</Link>}
-              {profile.isAdmin && <Link to="/admin/fix">Fix missing posters & info</Link>}
-              <button onClick={signOut}>Sign out of HomeFlix</button>
             </div>
           )}
         </div>

@@ -1,4 +1,4 @@
-// One household login, then "Who's watching?" profiles with optional 4-digit PINs.
+// One Admin login per device, then "Who's watching?" profiles with optional 4-digit PINs.
 import crypto from 'node:crypto';
 import { db, now, parseRow } from './db.js';
 
@@ -43,8 +43,15 @@ export function publicProfile(p) {
   const row = parseRow(p);
   return {
     id: row.id, name: row.name, avatar: row.avatar, hasPin: !!row.pin_hash,
-    isAdmin: !!row.is_admin, isKid: !!row.is_kid, maxAge: row.max_age, prefs: row.prefs,
+    isKid: !!row.is_kid, maxAge: row.max_age, prefs: row.prefs,
   };
+}
+
+const LOOPBACK = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
+
+/** True when the request comes from the computer HomeFlix runs on (not another device on the network). */
+export function isHostRequest(req) {
+  return LOOPBACK.has(req.socket.remoteAddress);
 }
 
 /** Attaches req.session and req.profile (the raw profile row) when logged in. */
@@ -71,8 +78,29 @@ export function requireProfile(req, res, next) {
   next();
 }
 
+// Admin settings stay unlocked while in use; after this long idle the password is asked again.
+export const ADMIN_IDLE_MS = 10 * 60 * 1000;
+
+export const adminUnlocked = (req) => !!req.session && !req.profile && (req.session.admin_until || 0) > now();
+
+export function unlockAdmin(token) {
+  db.prepare('UPDATE sessions SET admin_until = ? WHERE token = ?').run(now() + ADMIN_IDLE_MS, token);
+}
+
+export function lockAdmin(token) {
+  db.prepare('UPDATE sessions SET admin_until = NULL WHERE token = ?').run(token);
+}
+
+/**
+ * Admin settings: signed in, not watching as a profile, and the Admin password entered again
+ * recently. A device stays signed in for everyone, so the password keeps children out.
+ */
 export function requireAdmin(req, res, next) {
-  if (!req.profile?.is_admin) return res.status(403).json({ error: 'Only the admin profile can do this.' });
+  if (!req.session) return res.status(401).json({ error: 'Please sign in.' });
+  if (req.profile) return res.status(403).json({ error: 'Open Admin settings from the "Who\'s watching?" screen.' });
+  if (!adminUnlocked(req)) return res.status(403).json({ error: 'Enter the Admin password to open Admin settings.', code: 'ADMIN_LOCKED' });
+  // Each use pushes the idle timeout back.
+  unlockAdmin(req.session.token);
   next();
 }
 
