@@ -1,0 +1,5 @@
+node_modules/
+web/dist/
+data/
+mock-library/
+.DS_Store
